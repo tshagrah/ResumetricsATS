@@ -1,0 +1,6 @@
+{
+  "name": "ResuMetric ATS - AI Resume & CV Builder",
+  "description": "Build ATS-optimized resumes with AI keyword matching, multilingual translation, PDF & DOCX export, and seamless cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
