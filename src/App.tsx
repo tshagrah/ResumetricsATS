@@ -13,7 +13,7 @@ import { ATSAnalyzerDrawer } from './components/ATSAnalyzerDrawer';
 import { GrammarCheckerModal } from './components/GrammarCheckerModal';
 import { ImportModal } from './components/ImportModal';
 import { AuthModal } from './components/AuthModal';
-import type { ResumeData, ResumeTheme } from './types/resume';
+import type { ResumeData, ResumeTheme, DocumentMargins } from './types/resume';
 import {
   loadAllResumes,
   saveSingleResume,
@@ -57,6 +57,7 @@ export default function App() {
   const [isAnalyzingATS, setIsAnalyzingATS] = useState(false);
   const [mobileTab, setMobileTab] = useState<'editor' | 'preview'>('preview');
   const [isLiveEditMode, setIsLiveEditMode] = useState(false);
+  const [showMarginGuides, setShowMarginGuides] = useState(false);
 
   // Responsive device scaling: dynamically fit document preview to screen width on mobile/tablet
   useEffect(() => {
@@ -81,6 +82,11 @@ export default function App() {
   const handleAccentColorChange = (hex: string) => {
     if (!activeResume) return;
     handleUpdateActiveResume({ ...activeResume, accentColor: hex });
+  };
+
+  const handleMarginsChange = (margins: DocumentMargins) => {
+    if (!activeResume) return;
+    handleUpdateActiveResume({ ...activeResume, margins });
   };
 
   const handleSelectResume = (id: string) => {
@@ -218,6 +224,9 @@ export default function App() {
                 onThemeChange={handleThemeChange}
                 onLanguageChange={handleLanguageChange}
                 onAccentColorChange={handleAccentColorChange}
+                onMarginsChange={handleMarginsChange}
+                showMarginGuides={showMarginGuides}
+                onToggleMarginGuides={() => setShowMarginGuides(!showMarginGuides)}
                 isLiveEditMode={isLiveEditMode}
                 onToggleLiveEditMode={() => setIsLiveEditMode(!isLiveEditMode)}
                 isTranslating={isTranslating}
@@ -302,6 +311,7 @@ export default function App() {
                       zoom={zoom}
                       isLiveEditMode={isLiveEditMode}
                       onUpdateResume={handleUpdateActiveResume}
+                      showMarginGuides={showMarginGuides}
                     />
                   </div>
                 )}

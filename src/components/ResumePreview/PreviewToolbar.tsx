@@ -12,10 +12,13 @@ import {
   Loader2,
   Palette,
   Edit3,
+  Download,
+  Sliders,
 } from 'lucide-react';
-import type { ResumeData, ResumeTheme } from '../../types/resume';
-import { SUPPORTED_LANGUAGES, ACCENT_COLOR_PRESETS } from '../../types/resume';
+import type { ResumeData, ResumeTheme, DocumentMargins } from '../../types/resume';
+import { SUPPORTED_LANGUAGES, ACCENT_COLOR_PRESETS, DEFAULT_DOCUMENT_MARGINS, MARGIN_PRESETS } from '../../types/resume';
 import { exportResumeToDocx } from '../../utils/docxExport';
+import { exportResumeToPdf } from '../../utils/pdfExport';
 import confetti from 'canvas-confetti';
 
 interface PreviewToolbarProps {
@@ -23,6 +26,9 @@ interface PreviewToolbarProps {
   onThemeChange: (theme: ResumeTheme) => void;
   onLanguageChange: (langCode: string) => void;
   onAccentColorChange: (colorHex: string) => void;
+  onMarginsChange?: (margins: DocumentMargins) => void;
+  showMarginGuides?: boolean;
+  onToggleMarginGuides?: () => void;
   isLiveEditMode: boolean;
   onToggleLiveEditMode: () => void;
   isTranslating: boolean;
@@ -37,6 +43,9 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
   onThemeChange,
   onLanguageChange,
   onAccentColorChange,
+  onMarginsChange,
+  showMarginGuides = false,
+  onToggleMarginGuides,
   isLiveEditMode,
   onToggleLiveEditMode,
   isTranslating,
@@ -48,8 +57,10 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
   const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showMarginsMenu, setShowMarginsMenu] = useState(false);
 
   const activeAccent = resume.accentColor || '#2563EB';
+  const activeMargins = resume.margins || DEFAULT_DOCUMENT_MARGINS;
 
   const isBusy = isTranslating || isExportingDocx || isExportingPdf || isAnalyzingATS;
 
@@ -63,20 +74,23 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
 
   const activeTaskLabel = getActiveTaskLabel();
 
-  const handlePrintPdf = () => {
+  const handleDownloadPdf = async () => {
     try {
       setIsExportingPdf(true);
-      setTimeout(() => {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.8 },
-        });
-        window.print();
-        setIsExportingPdf(false);
-      }, 350);
+      await exportResumeToPdf(resume);
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.8 },
+      });
     } catch (err) {
-      console.error('Error opening print dialog:', err);
+      console.error('Error generating PDF with jsPDF/html-to-image, falling back to print dialog:', err);
+      try {
+        window.print();
+      } catch (printErr) {
+        console.error('Print dialog also unavailable:', printErr);
+      }
+    } finally {
       setIsExportingPdf(false);
     }
   };
@@ -241,6 +255,175 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
           )}
         </div>
 
+        {/* Page Margins Popover (Top, Bottom, Left, Right) */}
+        <div className="relative">
+          <button
+            onClick={() => setShowMarginsMenu(!showMarginsMenu)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs border rounded-lg font-medium transition-colors ${
+              showMarginsMenu
+                ? 'bg-slate-700 border-indigo-400 text-white shadow-xs'
+                : 'bg-slate-800 border-slate-700 hover:border-slate-600 text-slate-200'
+            }`}
+            title="Configure Page Margins (Top, Bottom, Left, Right) and Printable Bounds"
+          >
+            <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden sm:inline">Margins</span>
+            <span className="text-[10px] text-slate-400 font-mono">
+              {activeMargins.top}"
+            </span>
+          </button>
+
+          {showMarginsMenu && (
+            <div
+              className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 p-3.5 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 w-64 space-y-3 animate-in fade-in duration-150 text-slate-200"
+              onMouseLeave={() => setShowMarginsMenu(false)}
+            >
+              <div className="flex items-center justify-between border-b border-slate-700/80 pb-2">
+                <span className="text-xs font-bold text-white tracking-tight flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Page Margins</span>
+                </span>
+                <span className="text-[10px] text-slate-400 uppercase font-mono">US Letter</span>
+              </div>
+
+              {/* Margin Presets */}
+              <div>
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Presets
+                </span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {MARGIN_PRESETS.map((preset) => {
+                    const isSelected =
+                      activeMargins.top === preset.margins.top &&
+                      activeMargins.bottom === preset.margins.bottom &&
+                      activeMargins.left === preset.margins.left &&
+                      activeMargins.right === preset.margins.right;
+                    return (
+                      <button
+                        key={preset.id}
+                        onClick={() => {
+                          if (onMarginsChange) onMarginsChange(preset.margins);
+                        }}
+                        className={`px-2 py-1.5 rounded-lg text-xs font-medium text-center transition-all ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white font-semibold ring-1 ring-indigo-400 shadow-sm'
+                            : 'bg-slate-700/70 hover:bg-slate-700 text-slate-300'
+                        }`}
+                      >
+                        <span className="block leading-tight">{preset.id.charAt(0).toUpperCase() + preset.id.slice(1)}</span>
+                        <span className="text-[10px] opacity-75">{preset.margins.top}"</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Exact Margin Values: Top, Bottom, Left, Right */}
+              <div className="pt-2 border-t border-slate-700/70">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                  Custom Margins (inches)
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Top Margin</label>
+                    <div className="flex items-center bg-slate-900 border border-slate-700 rounded px-2 py-1">
+                      <input
+                        type="number"
+                        step="0.05"
+                        min="0.25"
+                        max="1.5"
+                        value={activeMargins.top}
+                        onChange={(e) => {
+                          const val = Math.max(0.2, Math.min(1.5, parseFloat(e.target.value) || 0.5));
+                          if (onMarginsChange) onMarginsChange({ ...activeMargins, top: val });
+                        }}
+                        className="w-full bg-transparent text-white font-mono text-xs focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-500 font-mono">in</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Bottom Margin</label>
+                    <div className="flex items-center bg-slate-900 border border-slate-700 rounded px-2 py-1">
+                      <input
+                        type="number"
+                        step="0.05"
+                        min="0.25"
+                        max="1.5"
+                        value={activeMargins.bottom}
+                        onChange={(e) => {
+                          const val = Math.max(0.2, Math.min(1.5, parseFloat(e.target.value) || 0.5));
+                          if (onMarginsChange) onMarginsChange({ ...activeMargins, bottom: val });
+                        }}
+                        className="w-full bg-transparent text-white font-mono text-xs focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-500 font-mono">in</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Left Margin</label>
+                    <div className="flex items-center bg-slate-900 border border-slate-700 rounded px-2 py-1">
+                      <input
+                        type="number"
+                        step="0.05"
+                        min="0.25"
+                        max="1.5"
+                        value={activeMargins.left}
+                        onChange={(e) => {
+                          const val = Math.max(0.2, Math.min(1.5, parseFloat(e.target.value) || 0.5));
+                          if (onMarginsChange) onMarginsChange({ ...activeMargins, left: val });
+                        }}
+                        className="w-full bg-transparent text-white font-mono text-xs focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-500 font-mono">in</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Right Margin</label>
+                    <div className="flex items-center bg-slate-900 border border-slate-700 rounded px-2 py-1">
+                      <input
+                        type="number"
+                        step="0.05"
+                        min="0.25"
+                        max="1.5"
+                        value={activeMargins.right}
+                        onChange={(e) => {
+                          const val = Math.max(0.2, Math.min(1.5, parseFloat(e.target.value) || 0.5));
+                          if (onMarginsChange) onMarginsChange({ ...activeMargins, right: val });
+                        }}
+                        className="w-full bg-transparent text-white font-mono text-xs focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-500 font-mono">in</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Toggle Printable Margin Guides */}
+              <div className="pt-2 border-t border-slate-700/70 flex items-center justify-between text-xs">
+                <span className="text-slate-300 text-[11px]">Show Printable Guides</span>
+                <button
+                  type="button"
+                  onClick={onToggleMarginGuides}
+                  className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                    showMarginGuides ? 'bg-indigo-600 justify-end' : 'bg-slate-700 justify-start'
+                  }`}
+                  title="Toggle dashed boundary line showing printable area"
+                >
+                  <span className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                </button>
+              </div>
+
+              <p className="text-[10px] text-slate-400 leading-tight italic">
+                Tip: Switching to "Compact" (0.50") margins helps fit a long resume into 1 page cleanly.
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Language Selector with Loading Indicator */}
         <div className="relative flex items-center">
           <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
@@ -329,17 +512,17 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
           </span>
         </button>
 
-        {/* PDF Download / Print with Spinner */}
+        {/* PDF Download with Spinner */}
         <button
-          onClick={handlePrintPdf}
+          onClick={handleDownloadPdf}
           disabled={isExportingPdf || isBusy}
-          className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-600/30 transition-colors disabled:opacity-60"
-          title="Download vector ATS-formatted PDF document"
+          className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-600/30 transition-colors disabled:opacity-60 cursor-pointer"
+          title="Download ATS-optimized PDF document"
         >
           {isExportingPdf ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Printer className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5" />
           )}
           <span>{isExportingPdf ? 'Exporting...' : 'PDF'}</span>
         </button>

@@ -22,6 +22,7 @@ import {
   Camera,
   Palette,
   Github,
+  FileDown,
 } from 'lucide-react';
 import type {
   ResumeData,
@@ -412,9 +413,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-slate-400 font-medium mb-1">
-                  Email <span className="text-[10px] text-indigo-400">(clickable mailto)</span>
-                </label>
+                <label className="block text-slate-400 font-medium mb-1">Email</label>
                 <input
                   type="email"
                   value={resume.contact.email}
@@ -447,9 +446,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-slate-400 font-medium mb-1">
-                  LinkedIn URL <span className="text-[10px] text-indigo-400">(opens tab)</span>
-                </label>
+                <label className="block text-slate-400 font-medium mb-1">LinkedIn URL</label>
                 <input
                   type="text"
                   value={resume.contact.linkedinUrl || ''}
@@ -459,9 +456,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-medium mb-1">
-                  Portfolio / Website URL <span className="text-[10px] text-indigo-400">(opens tab)</span>
-                </label>
+                <label className="block text-slate-400 font-medium mb-1">Portfolio / Website URL</label>
                 <input
                   type="text"
                   value={resume.contact.websiteUrl || ''}
@@ -471,9 +466,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-medium mb-1">
-                  GitHub Profile URL <span className="text-[10px] text-indigo-400">(opens tab)</span>
-                </label>
+                <label className="block text-slate-400 font-medium mb-1">GitHub Profile URL</label>
                 <input
                   type="text"
                   value={resume.contact.githubUrl || ''}
@@ -740,16 +733,38 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
             {resume.experience.map((exp, expIdx) => (
               <div key={exp.id} className="p-4 bg-slate-800/40 rounded-xl border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300">
-                    Role #{expIdx + 1}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteExperience(exp.id)}
-                    className="text-slate-500 hover:text-rose-400 p-1 transition-colors"
-                    title="Delete Role"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-300">
+                      Role #{expIdx + 1}
+                    </span>
+                    {exp.role && (
+                      <span className="text-slate-400 font-medium truncate max-w-[150px]">
+                        · {exp.role}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateExperience(exp.id, { pageBreakBefore: !exp.pageBreakBefore })}
+                      className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors border ${
+                        exp.pageBreakBefore
+                          ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 font-semibold shadow-xs'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                      }`}
+                      title={exp.pageBreakBefore ? 'Remove forced page break' : 'Force this job role to start on a new page'}
+                    >
+                      <FileDown className="w-3 h-3" />
+                      <span>{exp.pageBreakBefore ? 'New Page (Break: ON)' : 'Start on New Page'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteExperience(exp.id)}
+                      className="text-slate-500 hover:text-rose-400 p-1 transition-colors"
+                      title="Delete Role"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -778,12 +793,9 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
                 {/* Company Website URL (Requested feature) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-400 mb-1 flex items-center justify-between">
-                      <span className="flex items-center gap-1">
-                        <Globe className="w-3 h-3 text-indigo-400" />
-                        Company Website URL
-                      </span>
-                      <span className="text-[10px] text-indigo-400">Clickable in CV (opens new tab)</span>
+                    <label className="block text-slate-400 mb-1 flex items-center gap-1.5">
+                      <Globe className="w-3 h-3 text-indigo-400" />
+                      <span>Company Website URL</span>
                     </label>
                     <div className="relative">
                       <input
@@ -946,13 +958,35 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
                     placeholder="Category Name (e.g. Languages & Frameworks)"
                     className="font-bold text-slate-200 bg-transparent border-b border-slate-700 focus:outline-none focus:border-indigo-500 py-0.5 flex-1"
                   />
-                  <button
-                    onClick={() => handleDeleteSkillCategory(skillCat.id)}
-                    className="text-slate-500 hover:text-rose-400 p-1"
-                    title="Delete Category"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onChange({
+                          ...resume,
+                          skills: resume.skills.map((s) =>
+                            s.id === skillCat.id ? { ...s, pageBreakBefore: !s.pageBreakBefore } : s
+                          ),
+                        })
+                      }
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 transition-colors border ${
+                        skillCat.pageBreakBefore
+                          ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 font-semibold shadow-xs'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                      }`}
+                      title={skillCat.pageBreakBefore ? 'Remove forced page break' : 'Force this skill category to start on a new page'}
+                    >
+                      <FileDown className="w-3 h-3" />
+                      <span>{skillCat.pageBreakBefore ? 'New Page: ON' : 'New Page'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSkillCategory(skillCat.id)}
+                      className="text-slate-500 hover:text-rose-400 p-1"
+                      title="Delete Category"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[11px] text-slate-400 mb-1">
@@ -1002,13 +1036,28 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
               <div key={edu.id} className="p-3 bg-slate-800/40 rounded-xl border border-slate-800 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-slate-300">Degree Details</span>
-                  <button
-                    onClick={() => handleDeleteEducation(edu.id)}
-                    className="text-slate-500 hover:text-rose-400 p-1"
-                    title="Delete Degree"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateEducation(edu.id, { pageBreakBefore: !edu.pageBreakBefore })}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 transition-colors border ${
+                        edu.pageBreakBefore
+                          ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 font-semibold shadow-xs'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                      }`}
+                      title={edu.pageBreakBefore ? 'Remove forced page break' : 'Force this degree to start on a new page'}
+                    >
+                      <FileDown className="w-3 h-3" />
+                      <span>{edu.pageBreakBefore ? 'New Page: ON' : 'New Page'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteEducation(edu.id)}
+                      className="text-slate-500 hover:text-rose-400 p-1"
+                      title="Delete Degree"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
@@ -1094,13 +1143,28 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
               <div key={proj.id} className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-300">Project #{pIdx + 1}</span>
-                  <button
-                    onClick={() => handleDeleteProject(proj.id)}
-                    className="text-slate-500 hover:text-rose-400 p-1 transition-colors"
-                    title="Delete Project"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateProject(proj.id, { pageBreakBefore: !proj.pageBreakBefore })}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 transition-colors border ${
+                        proj.pageBreakBefore
+                          ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 font-semibold shadow-xs'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                      }`}
+                      title={proj.pageBreakBefore ? 'Remove forced page break' : 'Force this project to start on a new page'}
+                    >
+                      <FileDown className="w-3 h-3" />
+                      <span>{proj.pageBreakBefore ? 'New Page: ON' : 'New Page'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProject(proj.id)}
+                      className="text-slate-500 hover:text-rose-400 p-1 transition-colors"
+                      title="Delete Project"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1115,12 +1179,9 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1 flex items-center justify-between">
-                      <span className="flex items-center gap-1">
-                        <LinkIcon className="w-3 h-3 text-indigo-400" />
-                        Project Link or Demo URL
-                      </span>
-                      <span className="text-[10px] text-indigo-400">Clickable in CV (opens new tab)</span>
+                    <label className="block text-slate-400 mb-1 flex items-center gap-1.5">
+                      <LinkIcon className="w-3 h-3 text-indigo-400" />
+                      <span>Project Link or Demo URL</span>
                     </label>
                     <div className="relative">
                       <input
@@ -1213,13 +1274,28 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
               <div key={cert.id} className="p-3 bg-slate-800/40 rounded-xl border border-slate-800 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-slate-300">Certificate Details</span>
-                  <button
-                    onClick={() => handleDeleteCertification(cert.id)}
-                    className="text-slate-500 hover:text-rose-400 p-1"
-                    title="Delete Certification"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateCertification(cert.id, { pageBreakBefore: !cert.pageBreakBefore })}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 transition-colors border ${
+                        cert.pageBreakBefore
+                          ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 font-semibold shadow-xs'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                      }`}
+                      title={cert.pageBreakBefore ? 'Remove forced page break' : 'Force this certification to start on a new page'}
+                    >
+                      <FileDown className="w-3 h-3" />
+                      <span>{cert.pageBreakBefore ? 'New Page: ON' : 'New Page'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCertification(cert.id)}
+                      className="text-slate-500 hover:text-rose-400 p-1"
+                      title="Delete Certification"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
@@ -1344,13 +1420,32 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
                         <span className="text-[11px] font-semibold text-slate-300">
                           Entry #{itemIdx + 1}
                         </span>
-                        <button
-                          onClick={() => handleDeleteCustomSectionItem(sec.id, item.id)}
-                          className="text-slate-500 hover:text-rose-400 p-0.5"
-                          title="Remove entry"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateCustomSectionItem(sec.id, item.id, {
+                                pageBreakBefore: !item.pageBreakBefore,
+                              })
+                            }
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 transition-colors border ${
+                              item.pageBreakBefore
+                                ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 font-semibold shadow-xs'
+                                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                            }`}
+                            title={item.pageBreakBefore ? 'Remove forced page break' : 'Force this custom item to start on a new page'}
+                          >
+                            <FileDown className="w-3 h-3" />
+                            <span>{item.pageBreakBefore ? 'New Page: ON' : 'New Page'}</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCustomSectionItem(sec.id, item.id)}
+                            className="text-slate-500 hover:text-rose-400 p-0.5"
+                            title="Remove entry"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1388,7 +1483,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
                             onChange={(e) =>
                               handleUpdateCustomSectionItem(sec.id, item.id, { link: e.target.value })
                             }
-                            placeholder="Link or URL (clickable in CV)"
+                            placeholder="Link or URL (e.g. https://...)"
                             className="w-full px-2.5 py-1.5 pl-7 bg-slate-800 border border-slate-700 rounded-md text-white text-xs"
                           />
                           <LinkIcon className="w-3 h-3 text-slate-400 absolute left-2 top-2.5" />

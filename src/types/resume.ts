@@ -73,6 +73,7 @@ export interface WorkExperience {
   endDate: string;
   current: boolean;
   bullets: string[];
+  pageBreakBefore?: boolean; // Force item to start on a new paper page
 }
 
 export interface Education {
@@ -83,12 +84,14 @@ export interface Education {
   graduationYear: string;
   gpa?: string;
   honors?: string;
+  pageBreakBefore?: boolean;
 }
 
 export interface SkillCategory {
   id: string;
   category: string;
   items: string[];
+  pageBreakBefore?: boolean;
 }
 
 export interface ProjectItem {
@@ -97,6 +100,7 @@ export interface ProjectItem {
   description: string;
   technologies: string[];
   link?: string;
+  pageBreakBefore?: boolean;
 }
 
 export interface Certification {
@@ -105,6 +109,7 @@ export interface Certification {
   issuer: string;
   date: string;
   credentialId?: string;
+  pageBreakBefore?: boolean;
 }
 
 export interface CustomSectionItem {
@@ -114,13 +119,35 @@ export interface CustomSectionItem {
   date?: string;
   description?: string;
   link?: string;
+  pageBreakBefore?: boolean;
 }
 
 export interface CustomSection {
   id: string;
   title: string;
   items: CustomSectionItem[];
+  pageBreakBefore?: boolean;
 }
+
+export interface DocumentMargins {
+  top: number; // in inches (e.g. 0.65)
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+export const DEFAULT_DOCUMENT_MARGINS: DocumentMargins = {
+  top: 0.65,
+  right: 0.65,
+  bottom: 0.65,
+  left: 0.65,
+};
+
+export const MARGIN_PRESETS = [
+  { id: 'standard', name: 'Standard (0.65")', margins: { top: 0.65, right: 0.65, bottom: 0.65, left: 0.65 } },
+  { id: 'compact', name: 'Compact (0.50")', margins: { top: 0.50, right: 0.50, bottom: 0.50, left: 0.50 } },
+  { id: 'spacious', name: 'Spacious (0.80")', margins: { top: 0.80, right: 0.80, bottom: 0.80, left: 0.80 } },
+];
 
 export interface ResumeData {
   id: string;
@@ -128,6 +155,7 @@ export interface ResumeData {
   language: string; // e.g., 'en', 'es', 'fr', 'de', 'id', 'ja', 'zh'
   theme: ResumeTheme;
   accentColor?: string; // Custom highlight/accent color (e.g. #2563EB)
+  margins?: DocumentMargins; // Page margins in inches (top, right, bottom, left)
   targetRole?: string;
   contact: ContactInfo;
   summary: string;

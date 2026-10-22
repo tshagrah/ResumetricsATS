@@ -1,103 +1,97 @@
-# Creative Theme Distinction & Architectural Layout
+# Granular Sub-Item Page Break & Whole-Entry Overflow Engine
 
-Establish a visually striking, distinct **Creative Theme** with a two-column asymmetrical layout, bold typographic headers, and modern geometric accents—providing clear contrast to the full-bleed banner style of the **Modern Theme**.
-
----
+A precision page-break system that automatically moves overflowing entries (e.g. Work Experience roles, Education degrees, Skill categories) to the next page as cohesive units, paired with manual "Start on New Page" toggles for every sub-data item.
 
 ### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The user confirmed the visual element preference: **Bold typographic section headers with modern geometric accents**.
-> The plan creates a dedicated rendering branch in `ResumeDocument.tsx` specifically for the `creative` theme, ending the shared layout with `modern`.
-
-- **Confirmed Decision**: Creative theme utilizes **bold typographic section headers with modern geometric accents** (sharp geometric accent badges, high-contrast headings, and structured spatial composition).
-- **Layout Architecture**: 
-  - **Modern Theme**: Single-column linear layout with a solid full-width accent banner at the top.
-  - **Creative Theme**: Two-column asymmetrical architectural layout (left rail for candidate photo, contact links, skills & certifications; right area for executive summary, work experience, projects, education, and custom sections).
+> The following user preferences were confirmed in Phase 1:
+> - **Manual Sub-Item Toggles**: Every individual sub-data item (each Role in Work Experience, each Category in Skills, each Degree in Education, each Project, and each Certification) will have an independent "Start on New Page" (Page Break) toggle.
+> - **Automatic Whole-Entry Integrity**: By default, whenever an entry (like Role 2) straddles or extends out of the printable area of a page, the engine automatically pushes the whole entry to the top of the next page so no bullets or job details are sliced or stranded.
 
 ---
 
-## 1. Overview & Core Concept
+### 1. Overview & Core Concept
 
-- **What It Does**: Separates the `creative` theme into its own dedicated renderer in `ResumeDocument.tsx`. When users switch to **Creative**, the resume dynamically displays an editorial 2-column layout with geometric accent anchors, while preserving all interactive capabilities (clickable company links, email mailto, live canvas editing, and print/export accuracy).
-- **Target Audience / Persona**: Design leads, software architects, creative directors, tech founders, and marketing professionals targeting modern tech companies, creative agencies, and startups.
-- **Key Value**: Delivers genuine visual diversity between the 4 themes (**Pure ATS**, **Professional**, **Modern**, and **Creative**) rather than superficial color swaps.
+When creating multi-page resumes, content frequently overshoots the bottom of Page 1 by a few lines. Previously, a job role could either be awkwardly cut in half across a page split or leave bullet points orphaned.
 
----
-
-## 2. User Experience & Visual Design
-
-### Key User Flows
-1. **Theme Selection**: User clicks **Creative** on the `PreviewToolbar` theme switcher.
-2. **Instant Re-layout**: The preview smoothly transforms from a single-column top banner (Modern) into an asymmetrical two-column layout.
-3. **Sidebar Presentation (Left Column ~32%)**:
-   - High-contrast candidate photo with geometric framing matching the chosen `photoShape` (circle, rounded, or square).
-   - Contact details (email, phone, location, LinkedIn, GitHub, portfolio) with micro geometric indicators.
-   - Skills grouped cleanly with typography and tabular categorization.
-   - Certifications list with direct verification links.
-4. **Main Content Stream (Right Column ~68%)**:
-   - Prominent candidate name and uppercase job title with letter-spaced typography.
-   - Section headers rendered with **modern geometric accents** (solid accent geometric marker `w-2 h-2`, crisp hairline geometric divider).
-   - Work experience entries with role, date, company name, and external website links.
-   - Featured projects with clickable live demo URLs.
-   - Customizable user sections and education.
-5. **Full Live-Edit Support**: All text nodes remain directly editable on the canvas when "Live Edit" is turned on.
-
-### Visual Identity & Theme Tokens
-- **Canvas Base**: Clean white sheet (`bg-white`), dark slate typography (`text-slate-900`, `text-slate-700`).
-- **Sidebar Surface**: Subtle cool neutral background (`bg-slate-50/80` or `bg-zinc-50`) bordered with a refined hairline separator (`border-r border-slate-200/80`).
-- **Geometric Accents**: Sharp geometric squares and subtle geometric rules keyed to the user's selected `accentColor`.
-- **Typography**: Clean high-contrast sans-serif hierarchy (`tracking-tight` on titles, `tracking-wider` on uppercase headers, `tabular-nums` on all dates).
+This feature introduces a two-tier page break architecture:
+1. **Intelligent Baseline (Whole-Entry Protection)**: If Role 2 (or any entry) exceeds the printable boundary of Page 1, the pagination engine detects this and pushes the entire role cleanly to Page 2, starting under the configured top margin.
+2. **Explicit User Control (Granular Page Break Toggle)**: A clean "Start on New Page" toggle switch is added to every individual item in the editor form and canvas hover controls, allowing the user to explicitly force a page break before any role, skill group, or degree whenever they prefer a custom layout.
 
 ---
 
-## 3. Key Product Decisions & Trade-Offs
+### 2. User Experience & Visual Design
 
-- **Decision 1: Dedicated Two-Column Structure vs. Parameterized Single-Column**
-  - *Chosen Approach*: Implement a dedicated `theme === 'creative'` branch with a responsive two-column grid (`grid grid-cols-12` or `flex gap-8`).
-  - *Why*: A true two-column architecture creates an unmistakable visual distinction that modern creative and technical recruiters look for, avoiding the feeling of minor padding tweaks.
-- **Decision 2: Section Header Accents**
-  - *Chosen Approach*: Geometric square marker (`inline-block w-2.5 h-2.5 rounded-xs mr-2`) styled with `accentColor`, followed by bold uppercase tracking and a delicate hairline rule.
-  - *Why*: Directly fulfills the user's selected choice without cluttering the page with AI-style pills or distracting borders.
-- **Decision 3: Zero Impact on Export & Live Editing**
-  - *Chosen Approach*: Reuse existing `renderEditable`, `cleanPhoneForTel`, and `formatUrl` helpers so PDF print, DOCX export, and inline editing work identically without duplication.
+#### A. Editor Form Controls (Left Column)
+- On every expandable card in the editor (Work Experience role, Education degree, Skill category, Project item, Certification):
+  - A neat, unboxed action icon and toggle button: `Start on New Page` with a `Split` icon and active state badge (`Page Break: Active`).
+  - Clicking this toggle marks `pageBreakBefore: true` for that specific item.
+- Visual status text indicates which page the item is scheduled to start on.
+
+#### B. Live Canvas Paper Preview (Right Column)
+- When an item has `pageBreakBefore: true` or automatically overflows:
+  - The item immediately moves to the top of the next 8.5" × 11" paper sheet, aligned with the configured `marginTop`.
+  - A subtle, sleek canvas page break marker (`── Page Break (Forced by Work Experience: Role 2) ──`) appears in the gap between the paper sheets.
+- In Live Canvas Edit mode:
+  - Hovering over an item's header displays a quick shortcut button: `[+ Page Break] / [- Remove Page Break]` to toggle pagination directly on the paper canvas without leaving preview mode.
+
+#### C. PDF Export Synchronization
+- `pdfExport.ts` captures each `.resume-page-sheet` element directly.
+- Forced and automatic page breaks are rendered identically in the exported vector PDF, with complete top, bottom, left, and right margins on every sheet.
 
 ---
 
-## 4. Technical Architecture & Data Strategy
+### 3. Key Product Decisions & Trade-Offs
 
-### Layout Architecture Diagram
+- **Decision 1: Data Model Placement for Page Breaks**:
+  - *Chosen Approach*: Add an optional `pageBreakBefore?: boolean` property to each sub-data item interface (`WorkExperience`, `SkillCategory`, `Education`, `ProjectItem`, `Certification`, `CustomSectionItem`).
+  - *Why*: Storing page breaks on the items themselves ensures persistence in `localStorage`, export/import portability, and predictable re-rendering across sessions.
+  - *Alternative Considered*: CSS-only manual slicing without state persistence. Passed over because user breaks would be lost on page reload.
+
+- **Decision 2: Breaking Granularity (Whole Role vs Bullet Points)**:
+  - *Chosen Approach*: Default pagination boundary treats the entire role header + bullets as a cohesive block. If Role 2 extends beyond `printableHeight`, the entire Role 2 moves to Page 2.
+  - *Why*: Keeping job titles, company names, and their first bullets together follows strict ATS formatting guidelines and executive typography standards.
+
+---
+
+### 4. Technical Architecture & Data Strategy
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        RESUME DOCUMENT (8.5" x 11")                    │
-│                                                                        │
-│  LEFT SIDEBAR (~32% Width)              MAIN CONTENT (~68% Width)      │
-│  ┌──────────────────────────────┐       ┌────────────────────────────┐ │
-│  │ [ Candidate Profile Photo ]  │       │ Candidate Full Name        │ │
-│  │                              │       │ Job Title (Letterspaced)   │ │
-│  ├──────────────────────────────┤       ├────────────────────────────┤ │
-│  │ ■ CONTACT DETAILS            │       │ ■ PROFESSIONAL SUMMARY     │ │
-│  │   • Email (mailto)           │       │   Executive narrative copy │ │
-│  │   • Phone (tel:)             │       ├────────────────────────────┤ │
-│  │   • LinkedIn / Portfolio     │       │ ■ WORK EXPERIENCE          │ │
-│  ├──────────────────────────────┤       │   Role — Company [Website] │ │
-│  │ ■ CORE SKILLS                │       │   Date · Bullet achievements││
-│  │   Category: items            │       ├────────────────────────────┤ │
-│  ├──────────────────────────────┤       │ ■ SELECTED PROJECTS        │ │
-│  │ ■ CERTIFICATIONS             │       │   Project Name [Live Demo] │ │
-│  │   Issuer · Date · Verify     │       ├────────────────────────────┤ │
-│  └──────────────────────────────┘       │ ■ EDUCATION & CUSTOM SECS  │ │
-│                                         └────────────────────────────┘ │
-└────────────────────────────────────────────────────────────────────────┘
+│                          RESUME DATA STORE                             │
+│  {                                                                     │
+│    experience: [                                                       │
+│      { id: "exp-1", role: "Senior Designer", ... },                    │
+│      { id: "exp-2", role: "Graphic Designer", pageBreakBefore: true }  │
+│    ],                                                                  │
+│    skills: [                                                           │
+│      { id: "sk-1", category: "Core", pageBreakBefore: false },         │
+│      { id: "sk-2", category: "Methodologies", pageBreakBefore: true }  │
+│    ], ...                                                              │
+│  }                                                                     │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                   PAGINATION ENGINE (src/utils/pagination.ts)          │
+│  1. Check explicit `pageBreakBefore` on DOM nodes (data-break-before)  │
+│  2. Measure scrollHeight vs printableHeight (PAGE_HEIGHT - margins)    │
+│  3. Calculate clean slice indices: [0, breakPointRole2, totalHeight]  │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                  ┌─────────────────┴─────────────────┐
+                  ▼                                   ▼
+┌───────────────────────────────────┐ ┌──────────────────────────────────┐
+│       LIVE PAPER CANVAS           │ │          PDF EXPORT            │
+│  Page 1 Sheet: Role 1, Skills...  │ │  Page 1: 8.5" x 11" with margins │
+│  ── Page Break Divider ──         │ │  Page 2: 8.5" x 11" with margins │
+│  Page 2 Sheet: Role 2 (at top)    │ │  1:1 exact match with canvas     │
+└───────────────────────────────────┘ └──────────────────────────────────┘
 ```
 
-### State & Component Flow
-- **`src/types/resume.ts`**: `ResumeTheme` already supports `'ats-pure' | 'professional' | 'modern' | 'creative'`.
-- **`src/components/ResumePreview/ResumeDocument.tsx`**:
-  - Keep lines for `ats-pure` (Pure ATS single-column).
-  - Keep lines for `professional` (Executive header with accent line).
-  - Split `modern` and `creative`:
-    - `theme === 'modern'`: Retains the colored full-bleed header banner across the top.
-    - `theme === 'creative'`: Renders the new two-column geometric layout with bold typographic section headers and left-rail details.
-- **Export Consistency**: The DOCX exporter in `src/utils/docxExport.ts` and standard window print CSS remain fully compatible.
+#### Files to Modify Upon Approval:
+1. `src/types/resume.ts`: Add `pageBreakBefore?: boolean` to sub-data interfaces.
+2. `src/utils/pagination.ts`: Support `data-page-break-before="true"` elements to guarantee a forced breakpoint before any designated sub-item, alongside the automatic whole-item overflow detector.
+3. `src/components/ResumePreview/ResumeDocument.tsx`: Attach `data-page-break-before={item.pageBreakBefore}` and `data-break-item="true"` to every role, skill category, education item, and custom block across all 4 themes.
+4. `src/components/ResumeEditor/ResumeEditor.tsx`: Add the "Start on New Page" toggle button to role cards, education entries, skill categories, projects, and certifications.
